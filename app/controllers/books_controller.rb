@@ -1,5 +1,6 @@
 class BooksController < ApplicationController
 	before_action :find_book, only: [:show, :edit, :update, :destroy]
+	before_action :authenticate_user!, only: [:new, :edit]
 
 	def index
 		if params[:category].blank?
@@ -11,18 +12,22 @@ class BooksController < ApplicationController
 	end
 
 	def show
-
+		if @book.reviews.blank?
+			@average_review = 0
+		else
+			@average_review = @book.reviews.average(:rating).round(2)
+		end
 	end
 
 	def new
 		@book = current_user.books.build
-		@categories = Category.all.map {|c| [c.name, c.id]}
+		@categories = Category.all.map{ |c| [c.name, c.id] }
 	end
 
 	def create
 		@book = current_user.books.build(book_params)
 		@book.category_id = params[:category_id]
-		
+
 		if @book.save
 			redirect_to root_path
 		else
@@ -31,7 +36,7 @@ class BooksController < ApplicationController
 	end
 
 	def edit
-		@categories = Category.all.map {|c| [c.name, c.id]}
+		@categories = Category.all.map{ |c| [c.name, c.id] }
 	end
 
 	def update
@@ -50,11 +55,12 @@ class BooksController < ApplicationController
 
 	private
 
-	def book_params
-		params.require(:book).permit(:title, :description, :author, :category_id, :book_img)
-	end
+		def book_params
+			params.require(:book).permit(:title, :description, :author, :category_id, :book_img)
+		end
 
-	def find_book
-		@book = Book.find(params[:id])
-	end
+		def find_book
+			@book = Book.find(params[:id])
+		end
+
 end
